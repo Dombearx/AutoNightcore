@@ -1,4 +1,4 @@
-import nightcore as nc 
+import nightcore as nc
 import os 
 from os import path
 
