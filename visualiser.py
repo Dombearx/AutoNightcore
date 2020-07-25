@@ -261,11 +261,32 @@ def drawBars(spectrum, image, color):
     draw = ImageDraw.Draw(imTop)
     r, g, b = color
     color2 = (r, g, b, 50)
-    for j in range(0, 63):
-        draw.rectangle((10 + j * 20, 325, 10 + j * 20 + 20,
-                        325 - spectrum[j * 4] * 1 - 10), fill=color2)
-        draw.rectangle((15 + j * 20, 320, 15 + j * 20 + 10,
-                        320 - spectrum[j * 4] * 1), fill=color)
+
+    backgroundBarsVerticalPos = 125
+    barsVerticalPos = 120
+
+    horizontalGap = 20
+
+    backgroundLeftStart = 5
+    # wewnętrzne są mniejsze, więc przesunięte o 5 dalej
+    leftStart = 5 + backgroundLeftStart
+
+    backgroundBarsPercentageOfForegroundBarXD = 20
+
+    barHeight = 0.5
+
+    barThiccness = 5
+    backgroundBarThiccness = 15
+
+    # max 1023 / 4 chyba
+    numberOfBars = 63
+
+    for j in range(0, numberOfBars):
+        draw.rectangle((backgroundLeftStart + j * horizontalGap, backgroundBarsVerticalPos, backgroundLeftStart + j * horizontalGap + backgroundBarThiccness,
+                        backgroundBarsVerticalPos - spectrum[j * 4] * barHeight - backgroundBarsPercentageOfForegroundBarXD), fill=color2)
+
+        draw.rectangle((leftStart + j * horizontalGap, barsVerticalPos, leftStart + j * horizontalGap + barThiccness,
+                        barsVerticalPos - spectrum[j * 4] * barHeight), fill=color)
 
     imBottom = imTop.transpose(Image.FLIP_TOP_BOTTOM)
 
@@ -283,18 +304,18 @@ if __name__ == "__main__":
 
     FFMPEG_BIN = "ffmpeg"
 
-    audioFile = readAudioFile("piosenki/test.mp3", FFMPEG_BIN)
+    #audioFile = readAudioFile("piosenki/test.mp3", FFMPEG_BIN)
 
-    print(audioFile)
-    print(len(audioFile))
-    print(audioFile[400000])
+    # print(audioFile)
+    # print(len(audioFile))
+    # print(audioFile[400000])
 
-    im = parseBaseImage("images/background.jpg")
+    #im = parseBaseImage("images/background.jpg")
 
-    print(im)
+    # print(im)
 
     backgroundImage = "images/background.jpg"
-    inputFile = "piosenki/testNC.mp3"
-    outputFile = "output/testNC.mp4"
+    inputFile = "piosenki/short.mp3"
+    outputFile = "output/short.mp4"
 
     createVideo(backgroundImage, inputFile, outputFile)
