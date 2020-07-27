@@ -2,7 +2,7 @@
 from PIL import Image
 import numpy as np
 # Opens a image in RGB mode
-im = Image.open("./images/background.jpg")
+im = Image.open("./images/9.jpg")
 
 # Size of the image in pixels (size of orginal image)
 # (This is not mandatory)

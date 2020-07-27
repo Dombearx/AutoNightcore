@@ -3,6 +3,8 @@ import sys
 import numpy as np
 import subprocess as sp
 from PIL import Image, ImageDraw, ImageFont
+import tempfile
+from shutil import rmtree
 
 
 def findFfmpeg():
@@ -55,13 +57,13 @@ def readAudioFile(filename, FFMPEG_BIN):
 def drawBaseImage(backgroundFile, titleText="", titleFont="", fontSize="", alignment="",
                   xOffset="", yOffset="", textColor="", visColor=""):
     if backgroundFile == '':
-        im = Image.new("RGB", (1280, 720), "black")
+        im = Image.new("RGB", (1920, 1080), "black")
     else:
         im = Image.open(backgroundFile)
 
     # resize if necessary
-    if not im.size == (1280, 720):
-        im = im.resize((1280, 720), Image.ANTIALIAS)
+    if not im.size == (1920, 1080):
+        im = im.resize((1920, 1080), Image.ANTIALIAS)
 
     return im
 
@@ -135,6 +137,41 @@ def transformData(i, completeAudioArray, sampleSize, smoothConstantDown, smoothC
     return lastSpectrum
 
 
+def deleteTempDir(tempDir):
+    if tempDir and os.path.exists(tempDir):
+        rmtree(tempDir)
+
+
+def getVideoFrames(videoPath, firstOnly=False):
+    tempDir = os.path.join(tempfile.gettempdir(),
+                           'visualizer-data')
+    # recreate the temporary directory so it is empty
+    deleteTempDir(tempDir)
+    os.mkdir(tempDir)
+    print("making:", tempDir)
+    if firstOnly:
+        filename = 'preview%s.jpg' % os.path.basename(
+            videoPath).split('.', 1)[0]
+        options = '-ss 10 -vframes 1'
+    else:
+        filename = '$frame%05d.jpg'
+        options = ''
+    sp.call(
+        '%s -i "%s" -qscale:v 2 -y %s "%s"' % (
+            FFMPEG_BIN,
+            videoPath,
+            options,
+            os.path.join(tempDir, filename)
+        ),
+        shell=True
+    )
+    s = sorted([os.path.join(tempDir, f) for f in os.listdir(tempDir)])
+    print("----")
+    print(s)
+
+    return s
+
+
 def parseBaseImage(backgroundImage, preview=False):
     ''' determines if the base image is a single frame or list of frames '''
     if backgroundImage == "":
@@ -144,7 +181,7 @@ def parseBaseImage(backgroundImage, preview=False):
         if not bgExt == '.mp4':
             return [backgroundImage]
         else:
-            return self.getVideoFrames(backgroundImage, preview)
+            return getVideoFrames(backgroundImage, preview)
 
 
 def createVideo(backgroundImage, inputFile, outputFile):
@@ -158,12 +195,14 @@ def createVideo(backgroundImage, inputFile, outputFile):
     # self.progressBarSetText.emit('Loading background image…')
 
     backgroundFrames = parseBaseImage(backgroundImage)
+    print("---------")
+    print(len(backgroundFrames))
     if len(backgroundFrames) < 2:
         # the base image is not a video so we can draw it now
         imBackground = getBackgroundAtIndex(0)
-    # else:
+    else:
         # base images will be drawn while drawing the audio bars
-        # imBackground = None
+        imBackground = None
 
     # self.progressBarSetText.emit('Loading audio file…')
     completeAudioArray = readAudioFile(inputFile, FFMPEG_BIN)
@@ -181,7 +220,7 @@ def createVideo(backgroundImage, inputFile, outputFile):
                      '-y',
                      '-f', 'rawvideo',
                      '-vcodec', 'rawvideo',
-                     '-s', '1280x720',  # size of one frame
+                     '-s', '1920x1080',  # size of one frame
                      '-pix_fmt', 'rgb24',
                      '-r', '30',  # frames per second
                      '-i', '-',  # The input comes from a pipe
@@ -257,15 +296,18 @@ def createVideo(backgroundImage, inputFile, outputFile):
 
 def drawBars(spectrum, image, color):
 
-    imTop = Image.new("RGBA", (1280, 360))
+    imTop = Image.new("RGBA", (1920, 1080))
     draw = ImageDraw.Draw(imTop)
+
+    color = (255, 255, 255)
+
     r, g, b = color
     color2 = (r, g, b, 50)
 
-    backgroundBarsVerticalPos = 125
-    barsVerticalPos = 120
+    backgroundBarsVerticalPos = 185
+    barsVerticalPos = 180
 
-    horizontalGap = 20
+    horizontalGap = 32
 
     backgroundLeftStart = 5
     # wewnętrzne są mniejsze, więc przesunięte o 5 dalej
@@ -273,10 +315,10 @@ def drawBars(spectrum, image, color):
 
     backgroundBarsPercentageOfForegroundBarXD = 20
 
-    barHeight = 0.5
+    barHeight = 1
 
-    barThiccness = 5
-    backgroundBarThiccness = 15
+    barThiccness = 10
+    backgroundBarThiccness = 20
 
     # max 1023 / 4 chyba
     numberOfBars = 63
@@ -290,10 +332,10 @@ def drawBars(spectrum, image, color):
 
     imBottom = imTop.transpose(Image.FLIP_TOP_BOTTOM)
 
-    im = Image.new("RGB", (1280, 720), "black")
+    im = Image.new("RGB", (1920, 1080), "black")
     im.paste(image, (0, 0))
     im.paste(imTop, (0, 0), mask=imTop)
-    im.paste(imBottom, (0, 360), mask=imBottom)
+    im.paste(imBottom, (0, 0), mask=imBottom)
 
     return im
 
@@ -304,18 +346,20 @@ if __name__ == "__main__":
 
     FFMPEG_BIN = "ffmpeg"
 
-    #audioFile = readAudioFile("piosenki/test.mp3", FFMPEG_BIN)
+    # audioFile = readAudioFile("piosenki/test.mp3", FFMPEG_BIN)
 
     # print(audioFile)
     # print(len(audioFile))
     # print(audioFile[400000])
 
-    #im = parseBaseImage("images/background.jpg")
+    # im = parseBaseImage("images/background.jpg")
 
     # print(im)
 
-    backgroundImage = "images/background.jpg"
-    inputFile = "piosenki/short.mp3"
-    outputFile = "output/short.mp4"
+    backgroundImage = "images/background.mp4"
+
+    #backgroundImage = "images/background.jpg"
+    inputFile = "piosenki/cutted.mp3"
+    outputFile = "output/cutted.mp4"
 
     createVideo(backgroundImage, inputFile, outputFile)
