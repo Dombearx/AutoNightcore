@@ -11,10 +11,10 @@ width, height = im.size
 print(width, height)
 
 # Setting the points for cropped image
-left = 200
-top = 200
-right = width - 200
-bottom = height - 200
+left = 50
+top = 50
+right = width - 88
+bottom = height - 88
 
 with open('moves.npy', 'rb') as f:
 
@@ -25,15 +25,45 @@ print(moves)
 
 index = 0
 
+
+def zoom_at(img, n):
+    w, h = img.size
+
+    left = 0
+    top = 0
+    right = w
+    bottom = h
+
+    img = img.crop((left + (n * 1.77), top + n,
+                    right - (n * 1.77), bottom - n))
+
+    return img.resize((w, h), Image.LANCZOS)
+
+
+max_zoom = int(len(moves) / 2)
+
 currentLeft = left
 currentTop = top
 currentRight = right
 currentBottom = bottom
+n = 0
+
+flag = False
 
 for move in moves:
     x, y = move
-    im1 = im.crop((currentLeft + x, currentTop + y,
-                   currentRight + x, currentBottom + y))
+
+    zoomIm = zoom_at(im, n)
+    if not flag:
+        n += 1
+
+    if n >= max_zoom:
+        flag = True
+
+    if flag:
+        n -= 1
+    im1 = zoomIm.crop((currentLeft + x, currentTop + y,
+                       currentRight + x, currentBottom + y))
 
     currentLeft = currentLeft + x
     currentTop = currentTop + y
@@ -43,6 +73,10 @@ for move in moves:
     im1.save("./animation/" + str(index) + ".jpg")
 
     index += 1
+
+    #im1.save("./animation/" + str(index) + ".jpg")
+
+    #index += 1
 # Cropped image of above dimension
 # (It will not change orginal image)
 # for i in range(100):
