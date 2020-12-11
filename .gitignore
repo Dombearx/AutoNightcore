@@ -7,3 +7,8 @@ moves.npy
 my_concatenation.mp4
 output.mp4
 images
+main/__pycache__
+main/ffmpeg
+main/*.mp3
+tests
+images
